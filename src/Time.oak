@@ -1,0 +1,122 @@
+module Oak.Time
+
+def native after(span: Span): Task[Never, Posix]
+
+def native atEndOfFrame: Task[Never, Posix]
+
+//def native every(span: Span, toMsg: (Posix):msg): Sub[msg]
+
+type Posix
+  = hidden Millis(Int)
+
+def native now: Task[x, Posix]
+
+def posixToMillis(Millis(millis): Posix): Int =
+  millis
+
+def millisToPosix: (Int):Posix =
+  Millis
+
+type Zone
+  = hidden TimeZone(Int, List[Era])
+
+alias Era =
+  { start: Int
+  , offset: Int
+  }
+
+def utc: Zone =
+  TimeZone(0, [])
+
+def native here: Task[x, Zone]
+
+def toYear(zone: Zone, time: Posix): Int =
+  toCivil(toAdjustedMinutes(zone, time)).year
+
+def toMonth(zone: Zone, time: Posix): Month =
+  select toCivil(toAdjustedMinutes(zone, time)).month
+    case 1  -> Jan
+    case 2  -> Feb
+    case 3  -> Mar
+    case 4  -> Apr
+    case 5  -> May
+    case 6  -> Jun
+    case 7  -> Jul
+    case 8  -> Aug
+    case 9  -> Sep
+    case 10 -> Oct
+    case 11 -> Nov
+    case _  -> Dec
+  end
+
+def toDay(zone: Zone, time: Posix): Int =
+  toCivil(toAdjustedMinutes(zone, time)).day
+
+def toWeekday(zone: Zone, time: Posix): Weekday =
+  select modBy(7, flooredDiv(toAdjustedMinutes(zone, time), (60 * 24)))
+    case 0 -> Thu
+    case 1 -> Fri
+    case 2 -> Sat
+    case 3 -> Sun
+    case 4 -> Mon
+    case 5 -> Tue
+    case _ -> Wed
+  end
+
+
+def toHour(zone: Zone, time: Posix): Int =
+  modBy(24, flooredDiv(toAdjustedMinutes(zone, time), 60))
+
+def toMinute(zone: Zone, time: Posix): Int =
+  modBy(60, toAdjustedMinutes(zone, time))
+
+def toSecond(_: Zone, time: Posix): Int =
+  modBy(60, flooredDiv(posixToMillis(time), 1000))
+
+def toMillis(_: Zone, time: Posix): Int =
+  modBy(1000, posixToMillis(time))
+
+def hidden toAdjustedMinutes(TimeZone(defaultOffset, eras): Zone, time: Posix): Int =
+  toAdjustedMinutesHelp(defaultOffset, flooredDiv(posixToMillis(time), 60000), eras)
+
+def hidden toAdjustedMinutesHelp(defaultOffset: Int, posixMinutes: Int, eras: List[Era]): Int =
+  select eras
+    case [] ->
+      posixMinutes + defaultOffset
+    case era | olderEras ->
+      if era.start < posixMinutes then
+        posixMinutes + era.offset
+      else
+        toAdjustedMinutesHelp(defaultOffset, posixMinutes, olderEras)
+  end
+
+def toCivil(minutes: Int): { year: Int, month: Int, day: Int } =
+  let rawDay    = flooredDiv(minutes, (60 * 24) + 719468)
+  let era       = (if rawDay >= 0 then rawDay else rawDay - 146096) / 146097
+  let dayOfEra  = rawDay - era * 146097
+  let yearOfEra = (dayOfEra - dayOfEra / 1460 + dayOfEra / 36524 - dayOfEra / 146096) / 365
+  let year      = yearOfEra + era * 400
+  let dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
+  let mp        = (5 * dayOfYear + 2) / 153
+  let month     = mp + (if mp < 10 then 3 else -9)
+  in
+    { year = year + (if month <= 2 then 1 else 0)
+    , month = month
+    , day = dayOfYear - (153 * mp + 2) / 5 + 1
+    }
+
+def hidden flooredDiv(numerator: Int, denominator: Float): Int =
+  floor(Math.toFloat(numerator) / denominator)
+
+type Weekday = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+
+type Month = Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
+
+def customZone: (Int, List[{ start: Int, offset: Int }]): Zone =
+  TimeZone
+
+def native getZoneName: Task[x, ZoneName]
+
+type ZoneName
+  = Name(String)
+  | Offset(Int)

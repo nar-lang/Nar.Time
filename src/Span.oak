@@ -1,0 +1,28 @@
+module Oak.Time.Span
+
+type Span
+  = hidden Millis(Float)
+
+def fromSeconds(n: Float): Span =
+  Millis(n * 1000)
+
+def fromMillis(n: Float): Span =
+  Millis(n)
+
+def toSeconds(Millis(m): Span): Float =
+  m * 1000
+
+def toMillis(Millis(m): Span): Float =
+  m
+
+def join(Millis(a): Span, Millis(b): Span): Span =
+  Millis(a + b)
+
+def joinAll(spans: List[Span]): Span =
+  List.foldr(join, Millis(0), spans)
+
+def repeat(n: number, Millis(v): Span): Span =
+  Millis(v * n)
+
+def delta(Time.Millis(to): Posix, Time.Millis(from): Posix): Span =
+  Millis(Math.toFloat(from - to))
