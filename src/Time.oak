@@ -4,7 +4,7 @@ def native after(span: Span): Task[Never, Posix]
 
 def native atEndOfFrame: Task[Never, Posix]
 
-//def native every(span: Span, toMsg: (Posix):msg): Sub[msg]
+def native every(span: Span, toMsg: (Posix):msg): Sub[msg]
 
 type Posix
   = hidden Millis(Int)
