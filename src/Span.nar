@@ -1,4 +1,4 @@
-module Oak.Time.Span
+module Nar.Time.Span
 
 type Span
   = hidden Millis(Float)

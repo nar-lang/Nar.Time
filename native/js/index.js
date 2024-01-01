@@ -1,24 +1,24 @@
 export default function (runtime) {
     function toPosix(time) {
-        return runtime.optionShallow("Oak.Time.Posix", "Millis", [runtime.float(time / 1000.0)]);
+        return runtime.optionShallow("Nar.Time.Posix", "Millis", [runtime.float(time / 1000.0)]);
     }
 
-    runtime.afterRegistered(["Oak.Program"], () => {
-        runtime.register("Oak.Time", {
+    runtime.afterRegistered(["Nar.Program"], () => {
+        runtime.register("Nar.Time", {
             "after": (_delay) => {
-                return runtime.scope("Oak.Program").newTask((success, _) => {
+                return runtime.scope("Nar.Program").newTask((success, _) => {
                     setTimeout(() => {
                         success(toPosix(Date.now()));
                     }, runtime.unwrap(_delay).$values[0]);
                 });
             },
-            "atEndOfFrame": runtime.scope("Oak.Program").newTask((success, _) => {
+            "atEndOfFrame": runtime.scope("Nar.Program").newTask((success, _) => {
                 requestAnimationFrame((time) => {
                     success(toPosix(time));
                 });
             }),
             "every": (_delay, _toMsg) => {
-                return runtime.scope("Oak.Program").newSub("Oak.Time.every", [_delay], _toMsg, (args, post) => {
+                return runtime.scope("Nar.Program").newSub("Nar.Time.every", [_delay], _toMsg, (args, post) => {
                     const interval = setInterval(() => {
                         post(toPosix(Date.now()));
                     }, runtime.unwrap(_delay).$values[0]);
@@ -27,6 +27,6 @@ export default function (runtime) {
                     }
                 });
             },
-        }, ["Oak.Program"]);
+        }, ["Nar.Program"]);
     });
 }

@@ -1,4 +1,4 @@
-module Oak.Time
+module Nar.Time
 
 def native after(span: Span): Task[Never, Posix]
 
